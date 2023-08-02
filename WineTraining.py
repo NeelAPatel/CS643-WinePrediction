@@ -1,38 +1,31 @@
+# pip install pyspark findspark boto3 numpy pandas scikit-learn datetime
 
-# data_train = df_train.rdd.map(to_labeled_point)
-#AWS S3
-#ML Libs
-#Normal Libs
-#Package pyspark
-#pip install pyspark findspark boto3 numpy pandas scikit-learn datetime
+# Name: Neel Patel 
+# ID: nap48
+# Class: CS643 - Cloud Computing - Project 2 Wine Quality Prediction
+
+import findspark
 findspark.find()
 findspark.init()
+
 from datetime import datetime
 from io import StringIO
-from pyspark import SparkConf
 from pyspark import SparkConf, SparkContext
-from pyspark import SparkContext, SparkConf
 from pyspark.ml import Pipeline
 from pyspark.ml.classification import DecisionTreeClassifier
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
-from pyspark.ml.feature import StringIndexer, VectorIndexer
-from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.feature import StringIndexer, VectorIndexer, VectorAssembler
 from pyspark.ml.regression import LinearRegression
 from pyspark.mllib.evaluation import MulticlassMetrics
 from pyspark.mllib.linalg import Vectors
-from pyspark.mllib.regression import LabeledPoint
 from pyspark.mllib.regression import LabeledPoint, LinearRegressionWithSGD, LinearRegressionModel
-from pyspark.mllib.tree import DecisionTree
-from pyspark.mllib.tree import RandomForest, RandomForestModel
+from pyspark.mllib.tree import RandomForest, RandomForestModel, DecisionTree
 from pyspark.mllib.util import MLUtils
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
 from pyspark.sql.functions import col, when
 from pyspark.sql.session import SparkSession	
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from sklearn.metrics import f1_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score , f1_score
 import boto3
-import findspark
 import numpy as np
 import os
 import pandas as pd
