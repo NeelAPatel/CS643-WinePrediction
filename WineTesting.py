@@ -44,11 +44,7 @@ sc = SparkContext(conf=conf)
 spark = SparkSession(sc)
 
 # Define S3 bucket
-s3_bucket = 'neel-cs643'
-
-# Create S3 client
 s3 = boto3.client('s3')
-
 bucket_name = 'neel-cs643'
 file_key = "ValidationDataset.csv"
 model_dt_path = "s3a://"+bucket_name+"/model_dt.model"
@@ -62,47 +58,70 @@ print(">>>>>DT Model Loaded")
 # Load the models
 model_rf = RandomForestModel.load(sc, model_rf_path)
 print(">>>>>RF Model Loaded")
+
 # Load the validation dataset
 validation = spark.read.csv(dataset_path, inferSchema=True, header=True, sep=';')
-
 validation = validation.withColumnRenamed('""""quality"""""', "myLabel")
+print(">>>>>Quality Column renamed")
 
 # Removing the quotes from column names
 for column in validation.columns:
     validation = validation.withColumnRenamed(column, column.replace('"', ''))
 
-# Converting to double
+# Converting to double/integer
 for idx, col_name in enumerate(validation.columns):
     if idx not in [6 - 1, 7 - 1, len(validation.columns) - 1]:
         validation = validation.withColumn(col_name, col(col_name).cast("double"))
-
-# Converting to integer
-for idx, col_name in enumerate(validation.columns):
+    
     if idx in [6 - 1, 7 - 1, len(validation.columns) - 1]:
         validation = validation.withColumn(col_name, col(col_name).cast("integer"))
-
-
 print(">>>>>Data Cleaned, printing TestData...")
 validation.printSchema()
 validation.show()
 
+
+
 # Split features and labels
 validation_DT = validation.rdd.map(lambda row: (float(row[-1]), [float(feature) for feature in row[:-1]]))
+validation_RF = validation.rdd.map(lambda row: (float(row[-1]), [float(feature) for feature in row[:-1]]))
 print(">>>>>Splitted features and labels")
+
 predictions_dt = model_dt.predict(validation_DT.map(lambda x: x[1]))
 labelsAndPredictions_dt = validation_DT.map(lambda lp: lp[0]).zip(predictions_dt)
 print(">>>>>DT Predictions complete")
-
-metrics_dt = MulticlassMetrics(labelsAndPredictions_dt)
-print(f'Decision Tree Model - Accuracy: {metrics_dt.accuracy}, F1 Score: {metrics_dt.weightedFMeasure()}')
-
-
-# Split features and labels
-validation_RF = validation.rdd.map(lambda row: (float(row[-1]), [float(feature) for feature in row[:-1]]))
-print(">>>>>Splitted features and labels")
 predictions_rf = model_rf.predict(validation_RF.map(lambda x: x[1]))
 labelsAndPredictions_rf = validation_RF.map(lambda lp: lp[0]).zip(predictions_rf)
 print(">>>>>RF Predictions complete")
 
+
+
+metrics_dt = MulticlassMetrics(labelsAndPredictions_dt)
 metrics_rf = MulticlassMetrics(labelsAndPredictions_rf)
+print(f'Decision Tree Model - Accuracy: {metrics_dt.accuracy}, F1 Score: {metrics_dt.weightedFMeasure()}')
 print(f'Random Forest Model - Accuracy: {metrics_rf.accuracy}, F1 Score: {metrics_rf.weightedFMeasure()}')
+
+print(">>>>>PROGRAM END")
+
+
+
+
+# # Split features and labels
+# validation_DT = validation.rdd.map(lambda row: (float(row[-1]), [float(feature) for feature in row[:-1]]))
+# print(">>>>>Splitted features and labels")
+# predictions_dt = model_dt.predict(validation_DT.map(lambda x: x[1]))
+# labelsAndPredictions_dt = validation_DT.map(lambda lp: lp[0]).zip(predictions_dt)
+# print(">>>>>DT Predictions complete")
+
+# metrics_dt = MulticlassMetrics(labelsAndPredictions_dt)
+# print(f'Decision Tree Model - Accuracy: {metrics_dt.accuracy}, F1 Score: {metrics_dt.weightedFMeasure()}')
+
+
+# # Split features and labels
+# validation_RF = validation.rdd.map(lambda row: (float(row[-1]), [float(feature) for feature in row[:-1]]))
+# print(">>>>>Splitted features and labels")
+# predictions_rf = model_rf.predict(validation_RF.map(lambda x: x[1]))
+# labelsAndPredictions_rf = validation_RF.map(lambda lp: lp[0]).zip(predictions_rf)
+# print(">>>>>RF Predictions complete")
+
+# metrics_rf = MulticlassMetrics(labelsAndPredictions_rf)
+# print(f'Random Forest Model - Accuracy: {metrics_rf.accuracy}, F1 Score: {metrics_rf.weightedFMeasure()}')
