@@ -40,7 +40,7 @@ def main():
 
 def sparkInit(): 
     # Initialize Spark
-    conf = SparkConf().setAppName("Model Testing")
+    conf = SparkConf().setAppName("'NP-CS643-WineQuality-Testing'").set("spark.executor.cores", "1")
     sc = SparkContext(conf=conf)
     spark = SparkSession(sc)
     return sc, spark
@@ -108,24 +108,3 @@ def predictionTesting(validation, model_dt, model_rf):
 
 
 if __name__ == "__main__": main()
-
-# # Split features and labels
-# validation_DT = validation.rdd.map(lambda row: (float(row[-1]), [float(feature) for feature in row[:-1]]))
-# print(">>>>>Splitted features and labels")
-# predictions_dt = model_dt.predict(validation_DT.map(lambda x: x[1]))
-# labelsAndPredictions_dt = validation_DT.map(lambda lp: lp[0]).zip(predictions_dt)
-# print(">>>>>DT Predictions complete")
-
-# metrics_dt = MulticlassMetrics(labelsAndPredictions_dt)
-# print(f'Decision Tree Model - Accuracy: {metrics_dt.accuracy}, F1 Score: {metrics_dt.weightedFMeasure()}')
-
-
-# # Split features and labels
-# validation_RF = validation.rdd.map(lambda row: (float(row[-1]), [float(feature) for feature in row[:-1]]))
-# print(">>>>>Splitted features and labels")
-# predictions_rf = model_rf.predict(validation_RF.map(lambda x: x[1]))
-# labelsAndPredictions_rf = validation_RF.map(lambda lp: lp[0]).zip(predictions_rf)
-# print(">>>>>RF Predictions complete")
-
-# metrics_rf = MulticlassMetrics(labelsAndPredictions_rf)
-# print(f'Random Forest Model - Accuracy: {metrics_rf.accuracy}, F1 Score: {metrics_rf.weightedFMeasure()}')

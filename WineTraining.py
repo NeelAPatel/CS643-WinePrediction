@@ -37,14 +37,16 @@ from urllib.parse import urlparse
 def main():
     print(">>>>>> PROGRAM STARTS")
 
+    #Spark Setup
     conf = SparkConf().setAppName('NP-CS643-WineQuality-Training')
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     sc = spark.sparkContext
     sc.setLogLevel("ERROR")
 
-
+    #Training CSV path
     trainPath = "s3a://neel-cs643/TrainingDataset.csv"
     print(">>>> Importing: " + trainPath)
+    
     # Model Path Creation
     if not trainPath.startswith("s3://"):
         #TrainDataset.csv local
@@ -83,7 +85,6 @@ def main():
     print("Model - DecisionTree Created")
 
     # Save DecisionTree model
-    #model_path = "s3a://"+bucket_name+"/model_dt.model"
     model_path = s3ModelPath + "/model_dt.model"
     s3_deleteAndOverwrite(model_path, "model_dt.model")
     model_dt.save(sc, model_path)
@@ -98,7 +99,6 @@ def main():
     print("Model - Randomforest Created")
     
     # Save RandomForest model
-    #model_path = "s3a://"+bucket_name+"/model_rf.model"
     model_path = s3ModelPath + "/model_rf.model"
     s3_deleteAndOverwrite(model_path, "model_rf.model")
     model_rf.save(sc, model_path)
