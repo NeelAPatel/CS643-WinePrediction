@@ -49,8 +49,8 @@ def loadModels(sc):
     # Define S3 bucket
     s3 = boto3.client('s3')
     bucket_name = 'neel-cs643'
-    model_dt_path = "s3a://"+bucket_name+"/model_dt.model"
-    model_rf_path = "s3a://"+bucket_name+"/model_rf.model"
+    model_dt_path = "s3a://"+bucket_name+"/models/model_dt.model"
+    model_rf_path = "s3a://"+bucket_name+"/models/model_rf.model"
 
     # Load the models
     model_dt = DecisionTreeModel.load(sc, model_dt_path)

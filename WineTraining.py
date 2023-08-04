@@ -32,7 +32,7 @@ import pandas as pd
 import pyspark
 import shutil
 import sys
-
+from urllib.parse import urlparse
 
 def main():
     print(">>>>>> PROGRAM STARTS")
@@ -43,13 +43,31 @@ def main():
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     sc = spark.sparkContext
     sc.setLogLevel("ERROR")
-    
-    s3Client = boto3.client('s3')
-    #s3Client = ""
-    bucket_name = 'neel-cs643'
-    train_key = 'TrainingDataset.csv'
 
-    df_train = spark.read.csv("s3a://"+bucket_name+"/"+train_key, header=True, sep=";")
+    # Training Import
+    # if (len(sys.argv)> 1): 
+    #     #else take path
+    #     trainPath = "./CS643-WinePrediction/" + sys.argv[1]
+    # else: 
+    #     #if Empty, Get from S3
+    #     trainPath = "s3a://neel-cs643/TrainingDataset.csv"
+
+    trainPath = "s3a://neel-cs643/TrainingDataset.csv"
+    print(">>>> Importing: " + trainPath)
+    # Model Path Creation
+    if not trainPath.startswith("s3://"):
+        #TrainDataset.csv local
+        s3ModelPath = "s3a://neel-cs643/models"
+    else: 
+        #s3a://neel-cs643/TrainingDataset.csv
+        #s3DirPath = os.path.dirname(trainPath)
+        s3ModelPath = os.path.join(os.path.dirname(trainPath), "models")
+
+    print(">>>> Model Path set: " + s3ModelPath)
+
+
+
+    df_train = spark.read.csv(trainPath, header=True, sep=";")
     df_train.printSchema() # Column info
     df_train.show()
 
@@ -72,17 +90,6 @@ def main():
     df_train = df_train.rdd.map(lambda row: LabeledPoint(row[-1], row[:-1]))
 
 
-    print("Training RandomForest model...")
-    model_rf = RandomForest.trainClassifier(df_train, numClasses=10, categoricalFeaturesInfo={},
-                                    numTrees=10, featureSubsetStrategy="auto",
-                                    impurity='gini', maxDepth=10, maxBins=32)
-    print("Model - Randomforest Created")
-    
-    # Save RandomForest model
-    model_path = "s3a://"+bucket_name+"/model_rf.model"
-    model_rf.save(sc, model_path)
-
-    print(">>>>>Random Forest model saved")
 
 
     print("Training DecisionTree model...")
@@ -91,10 +98,67 @@ def main():
     print("Model - DecisionTree Created")
 
     # Save DecisionTree model
-    model_path = "s3a://"+bucket_name+"/model_dt.model"
+    #model_path = "s3a://"+bucket_name+"/model_dt.model"
+    model_path = s3ModelPath + "/model_dt.model"
+    s3_deleteAndOverwrite(model_path, "model_dt.model")
     model_dt.save(sc, model_path)
 
     print(">>>>> DecisionTree model saved")
 
+
+
+
+
+
+    print("Training RandomForest model...")
+    model_rf = RandomForest.trainClassifier(df_train, numClasses=10, categoricalFeaturesInfo={},
+                                    numTrees=10, featureSubsetStrategy="auto",
+                                    impurity='gini', maxDepth=10, maxBins=32)
+    print("Model - Randomforest Created")
+    
+    # Save RandomForest model
+    #model_path = "s3a://"+bucket_name+"/model_rf.model"
+    model_path = s3ModelPath + "/model_rf.model"
+    s3_deleteAndOverwrite(model_path, "model_rf.model")
+    model_rf.save(sc, model_path)
+
+    print(">>>>>Random Forest model saved")
+
+def s3_deleteAndOverwrite(model_path, targetFolderName): 
+    print(model_path)
+    print(targetFolderName)
+    pathTest = folder_exists(get_bucket_name(model_path), "models/"+ targetFolderName)
+    print(pathTest)
+    if (pathTest): 
+        delete_directory(get_bucket_name(model_path), "models/"+ targetFolderName)
+        
+
+
+def folder_exists(bucket_name, path_to_folder):
+    try:
+        s3 = boto3.client('s3')
+        res = s3.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=path_to_folder
+        )
+        return 'Contents' in res
+    except ClientError as e:
+        # Logic to handle errors.
+        raise e
+
+def get_bucket_name(s3_path):
+    try:
+        return urlparse(s3_path).netloc
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+
+def delete_directory(bucketName, folder_name):
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(bucketName)
+    bucket.objects.filter(Prefix=f"{folder_name}").delete()
+    print(">>>> Prexisting Folder Deleted" + folder_name)
 
 if __name__ == "__main__": main()
