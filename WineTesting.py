@@ -101,10 +101,10 @@ def predictionTesting(validation, model_dt, model_rf):
 
     metrics_dt = MulticlassMetrics(labelsAndPredictions_dt)
     metrics_rf = MulticlassMetrics(labelsAndPredictions_rf)
-    print(f'Decision Tree Model - Accuracy: {metrics_dt.accuracy}, F1 Score: {metrics_dt.weightedFMeasure()}')
-    print(f'Random Forest Model - Accuracy: {metrics_rf.accuracy}, F1 Score: {metrics_rf.weightedFMeasure()}')
+    print(f'>>>>>>> Decision Tree Model - Accuracy: {metrics_dt.accuracy}, F1 Score: {metrics_dt.weightedFMeasure()}')
+    print(f'>>>>>>> Random Forest Model - Accuracy: {metrics_rf.accuracy}, F1 Score: {metrics_rf.weightedFMeasure()}')
 
-    print(">>>>>PROGRAM END")
+    print(">>>>>TESTING PROGRAM COMPLETE")
 
 
 if __name__ == "__main__": main()

@@ -37,20 +37,11 @@ from urllib.parse import urlparse
 def main():
     print(">>>>>> PROGRAM STARTS")
 
-    # s3_path_train = sys.argv[1]
-    # s3_path_val = sys.argv[2]
     conf = SparkConf().setAppName('NP-CS643-WineQuality-Training')
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     sc = spark.sparkContext
     sc.setLogLevel("ERROR")
 
-    # Training Import
-    # if (len(sys.argv)> 1): 
-    #     #else take path
-    #     trainPath = "./CS643-WinePrediction/" + sys.argv[1]
-    # else: 
-    #     #if Empty, Get from S3
-    #     trainPath = "s3a://neel-cs643/TrainingDataset.csv"
 
     trainPath = "s3a://neel-cs643/TrainingDataset.csv"
     print(">>>> Importing: " + trainPath)
@@ -60,20 +51,17 @@ def main():
         s3ModelPath = "s3a://neel-cs643/models"
     else: 
         #s3a://neel-cs643/TrainingDataset.csv
-        #s3DirPath = os.path.dirname(trainPath)
         s3ModelPath = os.path.join(os.path.dirname(trainPath), "models")
-
     print(">>>> Model Path set: " + s3ModelPath)
 
 
-
+    #Importing Training CSV
     df_train = spark.read.csv(trainPath, header=True, sep=";")
     df_train.printSchema() # Column info
     df_train.show()
 
-
+    #Data Cleaning
     df_train = df_train.withColumnRenamed('""""quality"""""', "myLabel")
-
     # Removing the quotes from column names
     for column in df_train.columns:
         df_train = df_train.withColumnRenamed(column, column.replace('"', ''))
@@ -85,13 +73,10 @@ def main():
         elif idx in [6 - 1, 7 - 1, len(df_train.columns) - 1]:
             df_train = df_train.withColumn(col_name, col(col_name).cast("integer"))
 
-
     # Convert DataFrame to RDD
     df_train = df_train.rdd.map(lambda row: LabeledPoint(row[-1], row[:-1]))
 
-
-
-
+    #Model 1 - Decision Tree
     print("Training DecisionTree model...")
     model_dt = DecisionTree.trainClassifier(df_train, numClasses=10, categoricalFeaturesInfo={},
                                             impurity='gini', maxDepth=10, maxBins=32)
@@ -105,11 +90,7 @@ def main():
 
     print(">>>>> DecisionTree model saved")
 
-
-
-
-
-
+    #Model 2 - RandomForest
     print("Training RandomForest model...")
     model_rf = RandomForest.trainClassifier(df_train, numClasses=10, categoricalFeaturesInfo={},
                                     numTrees=10, featureSubsetStrategy="auto",
@@ -123,6 +104,7 @@ def main():
     model_rf.save(sc, model_path)
 
     print(">>>>>Random Forest model saved")
+    print(">>>>>TRAINING PROGRAM COMPLETE")
 
 def s3_deleteAndOverwrite(model_path, targetFolderName): 
     print(model_path)
@@ -159,6 +141,6 @@ def delete_directory(bucketName, folder_name):
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(bucketName)
     bucket.objects.filter(Prefix=f"{folder_name}").delete()
-    print(">>>> Prexisting Folder Deleted" + folder_name)
+    print(">>>> Prexisting Folder Deleted: " + folder_name)
 
 if __name__ == "__main__": main()
